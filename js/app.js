@@ -34,7 +34,7 @@ document.addEventListener("DOMContentLoaded", function() {
     submitNameButton.addEventListener("click", function() {
         playerName = playerNameInput.value;
         if (playerName.length < 3) {
-            alert("El nombre debe tener al menos 3 letras.");
+            document.getElementById('errorNombre').textContent = 'El nombre debe tener al menos 3 letras.';
             return;
         }
         modal.style.display = "none";

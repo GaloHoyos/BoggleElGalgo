@@ -9,9 +9,12 @@
 </head>
 <body>
     <div id="nameModal" class="modal">
-        <div class="modal-content">
+        <div class="modal-content" id="modalNombreContenido">
             <h2>Ingresa tu nombre</h2>
-            <input type="text" id="playerName" placeholder="Nombre del jugador">
+            <div id="campoNombre">
+                <input type="text" id="playerName" placeholder="Nombre del jugador">
+                <span class="error" id="errorNombre"></span>
+            </div>
             <button id="submitName">Aceptar</button>
         </div>
     </div>
