@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="./css/normalize.css">
+        <link rel="stylesheet" href="./css/stylesResto.css">
+        <title>Boggle el Galgo</title>
+    </head>
+    <body>
+        <header>
+            <h1><a href="./index.html">Boggle el Galgo</a></h1>
+            <nav>
+                <ul class="Menu">
+                    <li><a href="./index.html">Juego</a></li>
+                    <li><a href="./instrucciones.html">Instrucciones</a></li>
+                    <li><a href="./contacto.html">Contacto</a></li>
+                </ul>
+            </nav>
+        </header>
+        <form id="contactForm" action="mailto:?subject=Contacto Boggle El Galgo" target="_blank" method="post" enctype="text/plain">
+                <div class="campos">
+                    <label for="nombre">Nombre Completo:</label>
+                    <input type="text" id="nombre" name="nombre">
+                    <span class="error" id="errorNombre"></span>
+                </div>
+                <div class="campos">
+                    <label for="email">Email:</label>
+                    <input type="email" id="email" name="email">
+                    <span class="error" id="errorEmail"></span>
+                </div>
+                <div class="campos">
+                    <label for="mensaje">Mensaje:</label>
+                    <textarea id="mensaje" name="mensaje"></textarea>
+                    <span class="error" id="errorMensaje"></span>
+                </div>
+                <div class="botonSubmit">
+                    <button type="submit">Enviar</button>
+                </div>
+        </form>
+        <script src="./js/contacto.js"></script>
+    </body>
+</html>
