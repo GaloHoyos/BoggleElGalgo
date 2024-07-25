@@ -4,7 +4,6 @@ document.addEventListener("DOMContentLoaded", function() {
     var playerNameInput = document.getElementById("playerName");
     var submitNameButton = document.getElementById("submitName");
     var modal = document.getElementById("nameModal");
-    var closeModal = document.getElementsByClassName("close")[0];
     var tiempo = document.querySelector(".Tiempo");
     var puntuacion = document.querySelector(".Puntuacion");
     var casillas = document.querySelectorAll(".CasillaDeLetra");
@@ -16,6 +15,9 @@ document.addEventListener("DOMContentLoaded", function() {
     var endGameModal = document.getElementById("endGameModal");
     var restartGameButton = document.getElementById("restartGame");
     var closeEndGameModalButton = document.getElementById("closeEndGameModal");
+    var verResultadosButton = document.getElementById("verResultados");
+    var resultadosModal = document.getElementById("resultadosModal");
+    var closeResultadosModalButton = document.getElementsByClassName("closeResultados")[0];
     var resultadosGuardadosList = document.getElementById("resultadosGuardados");
 
     var palabraActual = "";
@@ -46,13 +48,11 @@ document.addEventListener("DOMContentLoaded", function() {
         endGame();
     });
 
-    closeModal.addEventListener("click", function() {
-        modal.style.display = "none";
-    });
-
     window.onclick = function(event) {
-        if (event.target == modal) {
-            modal.style.display = "none";
+        if (event.target == endGameModalmodal) {
+            endGameModal.style.display = "none";
+        } else if (event.target == resultadosModal) {
+            resultadosModal.style.display = "none";
         }
     };
 
@@ -65,6 +65,15 @@ document.addEventListener("DOMContentLoaded", function() {
         endGameModal.style.display = "none";
         timerSelect.disabled = false;
         iniciarJuego.disabled = false;
+    });
+
+    verResultadosButton.addEventListener("click", function() {
+        loadResults();
+        resultadosModal.style.display = "flex";
+    });
+
+    closeResultadosModalButton.addEventListener("click", function() {
+        resultadosModal.style.display = "none";
     });
 
     function startGame() {
@@ -88,17 +97,21 @@ document.addEventListener("DOMContentLoaded", function() {
     function endGame() {
         clearInterval(timerInterval);
         saveResult(); // Guardar resultado en LocalStorage
-        loadResults(); // Cargar y mostrar resultados guardados
-        endGameModal.style.display = "flex"; // Mostrar modal de fin del juego
+        endGameModal.style.display = "flex";
+        gameInProgress = false; // Indicar que el juego ha terminado
         timerSelect.disabled = false; // Habilitar selección de tiempo
         iniciarJuego.disabled = false; // Habilitar botón de iniciar juego
-        gameInProgress = false; // Indicar que el juego ha terminado
-        resetSelection(); // Deseleccionar todas las casillas
+        resetSelection(); // Resetear selección al finalizar el juego
     }
 
     function countdown() {
         tiempoRestante--;
         updateTiempo();
+        if (tiempoRestante <= 10) {
+            tiempo.style.color = "red";
+        } else {
+            tiempo.style.color = "white";
+        }
         if (tiempoRestante <= 0) {
             endGame();
         }
@@ -107,13 +120,7 @@ document.addEventListener("DOMContentLoaded", function() {
     function updateTiempo() {
         var minutes = Math.floor(tiempoRestante / 60);
         var seconds = tiempoRestante % 60;
-        tiempo.textContent = minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
-
-        if (tiempoRestante <= 10) {
-            tiempo.classList.add("TiempoPoco");
-        } else {
-            tiempo.classList.remove("TiempoPoco");
-        }
+        tiempo.textContent = `${minutes < 10 ? "0" : ""}${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
     }
 
     function generateRandomLetters() {
@@ -289,7 +296,8 @@ document.addEventListener("DOMContentLoaded", function() {
         var result = {
             name: playerName,
             score: puntuacionTotal,
-            date: new Date().toLocaleString()
+            date: new Date().toLocaleString(),
+            time: timerOption
         };
 
         var savedResults = JSON.parse(localStorage.getItem("gameResults")) || [];
@@ -300,12 +308,21 @@ document.addEventListener("DOMContentLoaded", function() {
     function loadResults() {
         var savedResults = JSON.parse(localStorage.getItem("gameResults")) || [];
         resultadosGuardadosList.innerHTML = "";
-        savedResults.forEach(function(result) {
+        
+        // Ordenar los resultados por puntuación de mayor a menor
+        savedResults.sort((a, b) => b.score - a.score);
+        
+        // Mostrar solo el top 10
+        var topResults = savedResults.slice(0, 10);
+        
+        topResults.forEach(function(result) {
             var li = document.createElement("li");
-            li.textContent = result.date + " - " + result.name + ": " + result.score;
+            li.textContent = `Nombre: ${result.name}, Puntuación: ${result.score}, Fecha: ${result.date}, Tiempo: ${result.time}`;
             resultadosGuardadosList.appendChild(li);
         });
     }
+    
+    
 
     // Cargar resultados al inicio
     loadResults();

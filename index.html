@@ -10,7 +10,6 @@
 <body>
     <div id="nameModal" class="modal">
         <div class="modal-content">
-            <span class="close">&times;</span>
             <h2>Ingresa tu nombre</h2>
             <input type="text" id="playerName" placeholder="Nombre del jugador">
             <button id="submitName">Aceptar</button>
@@ -22,8 +21,8 @@
         <nav>
             <ul class="Menu">
                 <li><a href="./index.html">Juego</a></li>
-                <li><a href="./ranking.html">Ranking</a></li>
                 <li><a href="./instrucciones.html">Instrucciones</a></li>
+                <li><a href="./contacto.html">Contacto</a></li>
             </ul>
         </nav>
     </header>
@@ -72,6 +71,7 @@
                 <p id="PalabraEnJuego">Palabra</p>
                 <button id="botonIniciar">Iniciar</button>
                 <button id="botonTerminar">Terminar</button>
+                <button id="verResultados">Ver Resultados</button>
             </div>
         </section>
         <section class="Tabla2">
@@ -91,12 +91,6 @@
                 </ul>
             </aside>
         </section>
-        <section class="Tabla2">
-            <aside>
-                <h2>Resultados guardados</h2>
-                <ul id="resultadosGuardados"></ul>
-            </aside>
-        </section>
     </main>
 
     <div id="endGameModal" class="modal">
@@ -104,6 +98,14 @@
             <h2>¡Tiempo terminado!</h2>
             <button id="restartGame">Reiniciar juego</button>
             <button id="closeEndGameModal">Salir</button>
+        </div>
+    </div>
+
+    <div id="resultadosModal" class="modal">
+        <div class="modal-content">
+            <span class="closeResultados">&times;</span>
+            <h2>Ranking - Top 10</h2>
+            <ul id="resultadosGuardados"></ul>
         </div>
     </div>        
 
