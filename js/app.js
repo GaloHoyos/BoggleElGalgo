@@ -11,6 +11,12 @@ document.addEventListener("DOMContentLoaded", function() {
     var palabrasEncontradasList = document.querySelector(".PalabrasEncontradas");
     var palabraEnJuego = document.getElementById("PalabraEnJuego");
     var iniciarJuego = document.getElementById("botonIniciar");
+    var terminarJuego = document.getElementById("botonTerminar");
+    var timerSelect = document.getElementById("timerSelect");
+    var endGameModal = document.getElementById("endGameModal");
+    var restartGameButton = document.getElementById("restartGame");
+    var closeEndGameModalButton = document.getElementById("closeEndGameModal");
+    var resultadosGuardadosList = document.getElementById("resultadosGuardados");
 
     var palabraActual = "";
     var tiempoRestante;
@@ -20,9 +26,11 @@ document.addEventListener("DOMContentLoaded", function() {
     var usedLetters = [];
     var allWords = [];
     var timerOption = 60;
+    var gameInProgress = false; // Flag para indicar si el juego está en curso
+    var playerName = "";
 
     submitNameButton.addEventListener("click", function() {
-        var playerName = playerNameInput.value;
+        playerName = playerNameInput.value;
         if (playerName.length < 3) {
             alert("El nombre debe tener al menos 3 letras.");
             return;
@@ -30,8 +38,12 @@ document.addEventListener("DOMContentLoaded", function() {
         modal.style.display = "none";
     });
 
-    botonIniciar.addEventListener("click", function() {
+    iniciarJuego.addEventListener("click", function() {
         startGame();
+    });
+
+    terminarJuego.addEventListener("click", function() {
+        endGame();
     });
 
     closeModal.addEventListener("click", function() {
@@ -44,7 +56,19 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     };
 
+    restartGameButton.addEventListener("click", function() {
+        endGameModal.style.display = "none";
+        startGame();
+    });
+
+    closeEndGameModalButton.addEventListener("click", function() {
+        endGameModal.style.display = "none";
+        timerSelect.disabled = false;
+        iniciarJuego.disabled = false;
+    });
+
     function startGame() {
+        timerOption = parseInt(timerSelect.value);
         tiempoRestante = timerOption;
         puntuacionTotal = 0;
         palabraActual = "";
@@ -55,14 +79,28 @@ document.addEventListener("DOMContentLoaded", function() {
         updateTiempo();
         timerInterval = setInterval(countdown, 1000);
         generateRandomLetters();
+        timerSelect.disabled = true; // Deshabilitar selección de tiempo
+        iniciarJuego.disabled = true; // Deshabilitar botón de iniciar juego
+        gameInProgress = true; // Indicar que el juego está en curso
+        resetSelection(); // Resetear selección al iniciar el juego
+    }
+
+    function endGame() {
+        clearInterval(timerInterval);
+        saveResult(); // Guardar resultado en LocalStorage
+        loadResults(); // Cargar y mostrar resultados guardados
+        endGameModal.style.display = "flex"; // Mostrar modal de fin del juego
+        timerSelect.disabled = false; // Habilitar selección de tiempo
+        iniciarJuego.disabled = false; // Habilitar botón de iniciar juego
+        gameInProgress = false; // Indicar que el juego ha terminado
+        resetSelection(); // Deseleccionar todas las casillas
     }
 
     function countdown() {
         tiempoRestante--;
         updateTiempo();
         if (tiempoRestante <= 0) {
-            clearInterval(timerInterval);
-            alert("¡Tiempo terminado!");
+            endGame();
         }
     }
 
@@ -70,6 +108,12 @@ document.addEventListener("DOMContentLoaded", function() {
         var minutes = Math.floor(tiempoRestante / 60);
         var seconds = tiempoRestante % 60;
         tiempo.textContent = minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
+
+        if (tiempoRestante <= 10) {
+            tiempo.classList.add("TiempoPoco");
+        } else {
+            tiempo.classList.remove("TiempoPoco");
+        }
     }
 
     function generateRandomLetters() {
@@ -79,7 +123,7 @@ document.addEventListener("DOMContentLoaded", function() {
             casilla.textContent = randomLetter;
         });
     }
-    
+
     function validarPalabra(palabra) {
         return fetch("https://api.dictionaryapi.dev/api/v2/entries/en/" + palabra)
             .then(response => response.json())
@@ -116,15 +160,23 @@ document.addEventListener("DOMContentLoaded", function() {
 
     casillas.forEach(function(casilla, index) {
         casilla.addEventListener("click", function() {
-            if (usedLetters.includes(index) || !isAdjacent(index)) {
+            if (!gameInProgress || usedLetters.includes(index) || !isAdjacent(index)) {
                 return;
             }
-            console.log("clicked", casilla.textContent); // debug
             palabraActual += casilla.textContent;
             usedLetters.push(index);
+
             casilla.classList.add("CasillaSeleccionada");
-            console.log("palabraActual", palabraActual); // debug
+            if (usedLetters.length > 1) {
+                var prevIndex = usedLetters[usedLetters.length - 2];
+                casillas[prevIndex].classList.remove("UltimaCasillaSeleccionada");
+            }
+            casilla.classList.add("UltimaCasillaSeleccionada");
+
             palabraEnJuego.innerHTML = palabraActual;
+
+            // Actualizar casillas seleccionables
+            updateSelectableCells();
         });
     });
 
@@ -133,13 +185,21 @@ document.addEventListener("DOMContentLoaded", function() {
             finalizarPalabra();
         }
     });
+
     document.addEventListener("keydown", function(event) {
         if (event.key === "Backspace") {
             if (palabraActual.length > 0) {
                 var lastIndex = usedLetters.pop();
                 palabraActual = palabraActual.slice(0, -1);
-                casillas[lastIndex].classList.remove("CasillaSeleccionada");
+                casillas[lastIndex].classList.remove("CasillaSeleccionada", "UltimaCasillaSeleccionada");
+                if (usedLetters.length > 0) {
+                    var newLastIndex = usedLetters[usedLetters.length - 1];
+                    casillas[newLastIndex].classList.add("UltimaCasillaSeleccionada");
+                }
                 palabraEnJuego.innerHTML = palabraActual;
+
+                // Actualizar casillas seleccionables
+                updateSelectableCells();
             }
         }
     });
@@ -152,8 +212,6 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     function finalizarPalabra() {
-        console.log("finalizarPalabra", palabraActual.toLowerCase()); // debug
-        console.log("tiempoRestante", tiempoRestante); // debug
         if(tiempoRestante > 0) {
             if (palabraActual.length >= 3) {
                 validarPalabra(palabraActual.toLowerCase()).then(isValid => {
@@ -162,7 +220,6 @@ document.addEventListener("DOMContentLoaded", function() {
                             allWords.push(palabraActual);
                             var li = document.createElement("li");
                             li.textContent = palabraActual;
-                            console.log("palabraActual", palabraActual); // debug
                             palabrasEncontradasList.appendChild(li);
                             actualizarPuntuacion(palabraActual);
                         } else {
@@ -173,19 +230,83 @@ document.addEventListener("DOMContentLoaded", function() {
                         puntuacionTotal--;
                         puntuacion.textContent = puntuacionTotal;
                     }
-                    palabraEnJuego.innerHTML = "";
-                    palabraActual = ""; // Mover aquí
-                    usedLetters = [];
-                    casillas.forEach(casilla => casilla.classList.remove("CasillaSeleccionada"));
+                    resetSelection();
                 });
             } else {
-                puntuacionTotal--;
-                puntuacion.textContent = puntuacionTotal;
-                palabraActual = ""; // Mantener aquí para el caso else
-                usedLetters = [];
-                casillas.forEach(casilla => casilla.classList.remove("CasillaSeleccionada"));
+                resetSelection();
             }
         }
     }
-    
+
+    function resetSelection() {
+        palabraActual = "";
+        usedLetters.forEach(function(index) {
+            casillas[index].classList.remove("CasillaSeleccionada", "UltimaCasillaSeleccionada", "CasillaSeleccionable");
+        });
+        usedLetters = [];
+        palabraEnJuego.innerHTML = palabraActual;
+        updateSelectableCells();
+    }
+
+    function updateSelectableCells() {
+        casillas.forEach(function(casilla) {
+            casilla.classList.remove("CasillaSeleccionable");
+        });
+
+        if (usedLetters.length === 0) {
+            casillas.forEach(function(casilla, index) {
+                casilla.classList.add("CasillaSeleccionable");
+            });
+        } else {
+            var lastIndex = usedLetters[usedLetters.length - 1];
+            var adjacentIndices = [
+                lastIndex - 5, lastIndex - 4, lastIndex - 3,
+                lastIndex - 1, /* lastIndex */ lastIndex + 1,
+                lastIndex + 3, lastIndex + 4, lastIndex + 5
+            ];
+
+            adjacentIndices.forEach(function(index) {
+                if (index >= 0 && index < 16 && !usedLetters.includes(index) && isValidMove(lastIndex, index)) {
+                    casillas[index].classList.add("CasillaSeleccionable");
+                }
+            });
+        }
+    }
+
+    function isValidMove(fromIndex, toIndex) {
+        var fromRow = Math.floor(fromIndex / 4);
+        var toRow = Math.floor(toIndex / 4);
+        var fromCol = fromIndex % 4;
+        var toCol = toIndex % 4;
+
+        var rowDiff = Math.abs(fromRow - toRow);
+        var colDiff = Math.abs(fromCol - toCol);
+
+        return rowDiff <= 1 && colDiff <= 1;
+    }
+
+    function saveResult() {
+        var result = {
+            name: playerName,
+            score: puntuacionTotal,
+            date: new Date().toLocaleString()
+        };
+
+        var savedResults = JSON.parse(localStorage.getItem("gameResults")) || [];
+        savedResults.push(result);
+        localStorage.setItem("gameResults", JSON.stringify(savedResults));
+    }
+
+    function loadResults() {
+        var savedResults = JSON.parse(localStorage.getItem("gameResults")) || [];
+        resultadosGuardadosList.innerHTML = "";
+        savedResults.forEach(function(result) {
+            var li = document.createElement("li");
+            li.textContent = result.date + " - " + result.name + ": " + result.score;
+            resultadosGuardadosList.appendChild(li);
+        });
+    }
+
+    // Cargar resultados al inicio
+    loadResults();
 });
