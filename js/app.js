@@ -1,129 +1,150 @@
 "use strict";
 
 document.addEventListener("DOMContentLoaded", function() {
-    var playerNameInput = document.getElementById("playerName");
-    var submitNameButton = document.getElementById("submitName");
-    var modal = document.getElementById("nameModal");
-    var tiempo = document.querySelector(".Tiempo");
-    var puntuacion = document.querySelector(".Puntuacion");
-    var casillas = document.querySelectorAll(".CasillaDeLetra");
-    var palabrasEncontradasList = document.querySelector(".PalabrasEncontradas");
-    var palabraEnJuego = document.getElementById("PalabraEnJuego");
-    var iniciarJuego = document.getElementById("botonIniciar");
-    var terminarJuego = document.getElementById("botonTerminar");
-    var timerSelect = document.getElementById("timerSelect");
-    var endGameModal = document.getElementById("endGameModal");
-    var restartGameButton = document.getElementById("restartGame");
-    var closeEndGameModalButton = document.getElementById("closeEndGameModal");
-    var verResultadosButton = document.getElementById("verResultados");
-    var resultadosModal = document.getElementById("resultadosModal");
-    var closeResultadosModalButton = document.getElementsByClassName("closeResultados")[0];
-    var resultadosGuardadosList = document.getElementById("resultadosGuardados");
+    var inputNombreJugador = document.getElementById("nombreJugador");
+    var botonAceptarNombre = document.getElementById("aceptarNombre");
+    var modal = document.getElementById("modalNombre");
+    var tiempo = document.querySelector(".tiempo");
+    var puntuacion = document.querySelector(".puntuacion");
+    var casillas = document.querySelectorAll(".casilla-de-letra");
+    var listaPalabrasEncontradas = document.querySelector(".palabras-encontradas");
+    var palabraEnJuego = document.getElementById("palabraEnJuego");
+    var botonIniciarJuego = document.getElementById("botonIniciar");
+    var botonTerminarJuego = document.getElementById("botonTerminar");
+    var seleccionTemporizador = document.getElementById("seleccionTemporizador");
+    var modalFinJuego = document.getElementById("modalFinJuego");
+    var botonReiniciarJuego = document.getElementById("reiniciarJuego");
+    var botonCerrarModalFinJuego = document.getElementById("cerrarModalFinJuego");
+    var botonVerResultados = document.getElementById("verResultados");
+    var resultadosModal = document.getElementById("modalResultados");
+    var botonCerrarResultados = document.getElementsByClassName("cerrar-resultados")[0];
+    var listaResultadosGuardados = document.getElementById("resultadosGuardados");
+    var enter = document.getElementById("botonEnter");
+    var borrar = document.getElementById("botonBorrar");
 
     var palabraActual = "";
     var tiempoRestante;
     var puntuacionTotal = 0;
     var letrasSeleccionadas = [];
-    var timerInterval;
-    var usedLetters = [];
-    var allWords = [];
-    var timerOption = 60;
-    var gameInProgress = false; // Flag para indicar si el juego está en curso
-    var playerName = "";
+    var IntervaloTiempo;
+    var letrasUsadas = [];
+    var todasPalabras = [];
+    var opcionTimer = 60;
+    var juegoEnProgreso = false; // Flag para indicar si el juego está en curso
+    var nombreJugador = "";
 
-    submitNameButton.addEventListener("click", function() {
-        playerName = playerNameInput.value;
-        if (playerName.length < 3) {
+    enter.addEventListener("click", function() {
+        finalizarPalabra();
+    });
+    borrar.addEventListener("click", function() {
+        if (palabraActual.length > 0) {
+            var ultimoIndex = letrasUsadas.pop();
+            palabraActual = palabraActual.slice(0, -1);
+            casillas[ultimoIndex].classList.remove("casilla-seleccionada", "ultima-casilla-seleccionada");
+            if (letrasUsadas.length > 0) {
+                var nuevoUltimoIndex = letrasUsadas[letrasUsadas.length - 1];
+                casillas[nuevoUltimoIndex].classList.add("ultima-casilla-seleccionada");
+            }
+            palabraEnJuego.innerHTML = palabraActual;
+
+            // Actualizar casillas seleccionables
+            actualizarCasillasSeleccionables();
+        }
+    });
+
+    botonAceptarNombre.addEventListener("click", function() {
+        nombreJugador = inputNombreJugador.value;
+        if (nombreJugador.length < 3) {
             document.getElementById('errorNombre').textContent = 'El nombre debe tener al menos 3 letras.';
             return;
         }
         modal.style.display = "none";
     });
 
-    iniciarJuego.addEventListener("click", function() {
-        startGame();
+    botonIniciarJuego.addEventListener("click", function() {
+        empezarJuego();
     });
 
-    terminarJuego.addEventListener("click", function() {
-        endGame();
+    botonTerminarJuego.addEventListener("click", function() {
+        terminarJuego();
     });
 
     window.onclick = function(event) {
-        if (event.target == endGameModalmodal) {
-            endGameModal.style.display = "none";
+        if (event.target == modalFinJuego) {
+            modalFinJuego.style.display = "none";
         } else if (event.target == resultadosModal) {
             resultadosModal.style.display = "none";
         }
     };
 
-    restartGameButton.addEventListener("click", function() {
-        endGameModal.style.display = "none";
-        startGame();
+    botonReiniciarJuego.addEventListener("click", function() {
+        modalFinJuego.style.display = "none";
+        empezarJuego();
     });
 
-    closeEndGameModalButton.addEventListener("click", function() {
-        endGameModal.style.display = "none";
-        timerSelect.disabled = false;
-        iniciarJuego.disabled = false;
+    botonCerrarModalFinJuego.addEventListener("click", function() {
+        modalFinJuego.style.display = "none";
+        seleccionTemporizador.disabled = false;
+        botonIniciarJuego.disabled = false;
     });
 
-    verResultadosButton.addEventListener("click", function() {
-        loadResults();
+    botonVerResultados.addEventListener("click", function() {
+        cargarResultados();
         resultadosModal.style.display = "flex";
     });
 
-    closeResultadosModalButton.addEventListener("click", function() {
+    botonCerrarResultados.addEventListener("click", function() {
         resultadosModal.style.display = "none";
     });
 
-    function startGame() {
-        timerOption = parseInt(timerSelect.value);
-        tiempoRestante = timerOption;
+    function empezarJuego() {
+        opcionTimer = parseInt(seleccionTemporizador.value);
+        tiempoRestante = opcionTimer;
         puntuacionTotal = 0;
         palabraActual = "";
-        usedLetters = [];
-        allWords = [];
-        palabrasEncontradasList.innerHTML = "";
+        letrasUsadas = [];
+        todasPalabras = [];
+        listaPalabrasEncontradas.innerHTML = "";
         puntuacion.textContent = puntuacionTotal;
-        updateTiempo();
-        timerInterval = setInterval(countdown, 1000);
-        generateRandomLetters();
-        timerSelect.disabled = true; // Deshabilitar selección de tiempo
-        iniciarJuego.disabled = true; // Deshabilitar botón de iniciar juego
-        gameInProgress = true; // Indicar que el juego está en curso
-        resetSelection(); // Resetear selección al iniciar el juego
+        actualizarTiempo();
+        IntervaloTiempo = setInterval(cuentaRegresiva, 1000);
+        generarLetrasRandom();
+        seleccionTemporizador.disabled = true; // Deshabilitar selección de tiempo
+        botonIniciarJuego.disabled = true; // Deshabilitar botón de iniciar juego
+        juegoEnProgreso = true; // Indicar que el juego está en curso
+        reiniciarSeleccion(); // Resetear selección al iniciar el juego
     }
 
-    function endGame() {
-        clearInterval(timerInterval);
-        saveResult(); // Guardar resultado en LocalStorage
-        endGameModal.style.display = "flex";
-        gameInProgress = false; // Indicar que el juego ha terminado
-        timerSelect.disabled = false; // Habilitar selección de tiempo
-        iniciarJuego.disabled = false; // Habilitar botón de iniciar juego
-        resetSelection(); // Resetear selección al finalizar el juego
+    function terminarJuego() {
+        clearInterval(IntervaloTiempo);
+        guardarResultados(); // Guardar resultadoado en LocalStorage
+        modalFinJuego.style.display = "flex";
+        juegoEnProgreso = false; // Indicar que el juego ha terminado
+        seleccionTemporizador.disabled = false; // Habilitar selección de tiempo
+        botonIniciarJuego.disabled = false; // Habilitar botón de iniciar juego
+        reiniciarSeleccion(); // Resetear selección al finalizar el juego
     }
 
-    function countdown() {
+    function cuentaRegresiva() {
         tiempoRestante--;
-        updateTiempo();
+        actualizarTiempo();
         if (tiempoRestante <= 10) {
             tiempo.style.color = "red";
         } else {
             tiempo.style.color = "white";
         }
         if (tiempoRestante <= 0) {
-            endGame();
+            terminarJuego();
         }
     }
 
-    function updateTiempo() {
+    function actualizarTiempo() {
         var minutes = Math.floor(tiempoRestante / 60);
         var seconds = tiempoRestante % 60;
         tiempo.textContent = `${minutes < 10 ? "0" : ""}${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
     }
 
-    function generateRandomLetters() {
+    function generarLetrasRandom() {
         var letters = "EEEEEEEEEEEEAAAAAAAAAIIIIIIIIINNNNNNNNOOOOOOOOTTTTTTTTLLLLSSSSUUUUDDDRRRHHHGGGCCMMFFYYWWBBKKVVXXZZQJ";
         casillas.forEach(function(casilla) {
             var randomLetter = letters.charAt(Math.floor(Math.random() * letters.length));
@@ -167,23 +188,23 @@ document.addEventListener("DOMContentLoaded", function() {
 
     casillas.forEach(function(casilla, index) {
         casilla.addEventListener("click", function() {
-            if (!gameInProgress || usedLetters.includes(index) || !isAdjacent(index)) {
+            if (!juegoEnProgreso || letrasUsadas.includes(index) || !esAdyacente(index)) {
                 return;
             }
             palabraActual += casilla.textContent;
-            usedLetters.push(index);
+            letrasUsadas.push(index);
 
-            casilla.classList.add("CasillaSeleccionada");
-            if (usedLetters.length > 1) {
-                var prevIndex = usedLetters[usedLetters.length - 2];
-                casillas[prevIndex].classList.remove("UltimaCasillaSeleccionada");
+            casilla.classList.add("casilla-seleccionada");
+            if (letrasUsadas.length > 1) {
+                var prevIndex = letrasUsadas[letrasUsadas.length - 2];
+                casillas[prevIndex].classList.remove("ultima-casilla-seleccionada");
             }
-            casilla.classList.add("UltimaCasillaSeleccionada");
+            casilla.classList.add("ultima-casilla-seleccionada");
 
             palabraEnJuego.innerHTML = palabraActual;
 
             // Actualizar casillas seleccionables
-            updateSelectableCells();
+            actualizarCasillasSeleccionables();
         });
     });
 
@@ -196,25 +217,25 @@ document.addEventListener("DOMContentLoaded", function() {
     document.addEventListener("keydown", function(event) {
         if (event.key === "Backspace") {
             if (palabraActual.length > 0) {
-                var lastIndex = usedLetters.pop();
+                var ultimoIndex = letrasUsadas.pop();
                 palabraActual = palabraActual.slice(0, -1);
-                casillas[lastIndex].classList.remove("CasillaSeleccionada", "UltimaCasillaSeleccionada");
-                if (usedLetters.length > 0) {
-                    var newLastIndex = usedLetters[usedLetters.length - 1];
-                    casillas[newLastIndex].classList.add("UltimaCasillaSeleccionada");
+                casillas[ultimoIndex].classList.remove("casilla-seleccionada", "ultima-casilla-seleccionada");
+                if (letrasUsadas.length > 0) {
+                    var nuevoUltimoIndex = letrasUsadas[letrasUsadas.length - 1];
+                    casillas[nuevoUltimoIndex].classList.add("ultima-casilla-seleccionada");
                 }
                 palabraEnJuego.innerHTML = palabraActual;
 
                 // Actualizar casillas seleccionables
-                updateSelectableCells();
+                actualizarCasillasSeleccionables();
             }
         }
     });
 
-    function isAdjacent(index) {
-        if (usedLetters.length === 0) return true;
-        var lastIndex = usedLetters[usedLetters.length - 1];
-        var diff = Math.abs(lastIndex - index);
+    function esAdyacente(index) {
+        if (letrasUsadas.length === 0) return true;
+        var ultimoIndex = letrasUsadas[letrasUsadas.length - 1];
+        var diff = Math.abs(ultimoIndex - index);
         return diff === 1 || diff === 4 || diff === 3 || diff === 5;
     }
 
@@ -223,11 +244,11 @@ document.addEventListener("DOMContentLoaded", function() {
             if (palabraActual.length >= 3) {
                 validarPalabra(palabraActual.toLowerCase()).then(isValid => {
                     if (isValid) {
-                        if (!allWords.includes(palabraActual)) {
-                            allWords.push(palabraActual);
+                        if (!todasPalabras.includes(palabraActual)) {
+                            todasPalabras.push(palabraActual);
                             var li = document.createElement("li");
                             li.textContent = palabraActual;
-                            palabrasEncontradasList.appendChild(li);
+                            listaPalabrasEncontradas.appendChild(li);
                             actualizarPuntuacion(palabraActual);
                         } else {
                             puntuacionTotal--;
@@ -237,93 +258,93 @@ document.addEventListener("DOMContentLoaded", function() {
                         puntuacionTotal--;
                         puntuacion.textContent = puntuacionTotal;
                     }
-                    resetSelection();
+                    reiniciarSeleccion();
                 });
             } else {
-                resetSelection();
+                reiniciarSeleccion();
             }
         }
     }
 
-    function resetSelection() {
+    function reiniciarSeleccion() {
         palabraActual = "";
-        usedLetters.forEach(function(index) {
-            casillas[index].classList.remove("CasillaSeleccionada", "UltimaCasillaSeleccionada", "CasillaSeleccionable");
+        letrasUsadas.forEach(function(index) {
+            casillas[index].classList.remove("casilla-seleccionada", "ultima-casilla-seleccionada", "casilla-seleccionable");
         });
-        usedLetters = [];
+        letrasUsadas = [];
         palabraEnJuego.innerHTML = palabraActual;
-        updateSelectableCells();
+        actualizarCasillasSeleccionables();
     }
 
-    function updateSelectableCells() {
+    function actualizarCasillasSeleccionables() {
         casillas.forEach(function(casilla) {
-            casilla.classList.remove("CasillaSeleccionable");
+            casilla.classList.remove("casilla-seleccionable");
         });
 
-        if (usedLetters.length === 0) {
+        if (letrasUsadas.length === 0) {
             casillas.forEach(function(casilla, index) {
-                casilla.classList.add("CasillaSeleccionable");
+                casilla.classList.add("casilla-seleccionable");
             });
         } else {
-            var lastIndex = usedLetters[usedLetters.length - 1];
-            var adjacentIndices = [
-                lastIndex - 5, lastIndex - 4, lastIndex - 3,
-                lastIndex - 1, /* lastIndex */ lastIndex + 1,
-                lastIndex + 3, lastIndex + 4, lastIndex + 5
+            var ultimoIndex = letrasUsadas[letrasUsadas.length - 1];
+            var indicesAdyacentes = [
+                ultimoIndex - 5, ultimoIndex - 4, ultimoIndex - 3,
+                ultimoIndex - 1, /* ultimoIndex */ ultimoIndex + 1,
+                ultimoIndex + 3, ultimoIndex + 4, ultimoIndex + 5
             ];
 
-            adjacentIndices.forEach(function(index) {
-                if (index >= 0 && index < 16 && !usedLetters.includes(index) && isValidMove(lastIndex, index)) {
-                    casillas[index].classList.add("CasillaSeleccionable");
+            indicesAdyacentes.forEach(function(index) {
+                if (index >= 0 && index < 16 && !letrasUsadas.includes(index) && movimientoValido(ultimoIndex, index)) {
+                    casillas[index].classList.add("casilla-seleccionable");
                 }
             });
         }
     }
 
-    function isValidMove(fromIndex, toIndex) {
-        var fromRow = Math.floor(fromIndex / 4);
-        var toRow = Math.floor(toIndex / 4);
-        var fromCol = fromIndex % 4;
-        var toCol = toIndex % 4;
+    function movimientoValido(fromIndex, toIndex) {
+        var deFila = Math.floor(fromIndex / 4);
+        var haciaFila = Math.floor(toIndex / 4);
+        var deColumna = fromIndex % 4;
+        var haciaColumna = toIndex % 4;
 
-        var rowDiff = Math.abs(fromRow - toRow);
-        var colDiff = Math.abs(fromCol - toCol);
+        var difFila = Math.abs(deFila - haciaFila);
+        var difColumna = Math.abs(deColumna - haciaColumna);
 
-        return rowDiff <= 1 && colDiff <= 1;
+        return difFila <= 1 && difColumna <= 1;
     }
 
-    function saveResult() {
-        var result = {
-            name: playerName,
-            score: puntuacionTotal,
-            date: new Date().toLocaleString(),
-            time: timerOption
+    function guardarResultados() {
+        var resultado = {
+            nombre: nombreJugador,
+            puntuacion: puntuacionTotal,
+            fecha: new Date().toLocaleString(),
+            tiempo: opcionTimer
         };
 
-        var savedResults = JSON.parse(localStorage.getItem("gameResults")) || [];
-        savedResults.push(result);
-        localStorage.setItem("gameResults", JSON.stringify(savedResults));
+        var resultadosGuardados = JSON.parse(localStorage.getItem("resultadosJuego")) || [];
+        resultadosGuardados.push(resultado);
+        localStorage.setItem("resultadosJuego", JSON.stringify(resultadosGuardados));
     }
 
-    function loadResults() {
-        var savedResults = JSON.parse(localStorage.getItem("gameResults")) || [];
-        resultadosGuardadosList.innerHTML = "";
+    function cargarResultados() {
+        var resultadosGuardados = JSON.parse(localStorage.getItem("resultadosJuego")) || [];
+        listaResultadosGuardados.innerHTML = "";
         
         // Ordenar los resultados por puntuación de mayor a menor
-        savedResults.sort((a, b) => b.score - a.score);
+        resultadosGuardados.sort((a, b) => b.puntuacion - a.puntuacion);
         
         // Mostrar solo el top 10
-        var topResults = savedResults.slice(0, 10);
+        var topresultados = resultadosGuardados.slice(0, 10);
         
-        topResults.forEach(function(result) {
+        topresultados.forEach(function(resultado) {
             var li = document.createElement("li");
-            li.textContent = `Nombre: ${result.name}, Puntuación: ${result.score}, Fecha: ${result.date}, Tiempo: ${result.time}`;
-            resultadosGuardadosList.appendChild(li);
+            li.textContent = `Nombre: ${resultado.nombre}, Puntuación: ${resultado.puntuacion}, Fecha: ${resultado.fecha}, Tiempo: ${resultado.tiempo}`;
+            listaResultadosGuardados.appendChild(li);
         });
     }
     
     
 
     // Cargar resultados al inicio
-    loadResults();
+    cargarResultados();
 });
