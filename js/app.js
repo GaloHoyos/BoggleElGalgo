@@ -21,6 +21,9 @@ document.addEventListener("DOMContentLoaded", function() {
     var listaResultadosGuardados = document.getElementById("resultadosGuardados");
     var enter = document.getElementById("botonEnter");
     var borrar = document.getElementById("botonBorrar");
+    var botonOrdenarPorFecha = document.getElementById("botonPorFecha");
+    var botonOrdenarPorPuntuacion = document.getElementById("botonPorPuntuacion");
+    var textoRanking = document.getElementById("textoRanking");
 
     var palabraActual = "";
     var tiempoRestante;
@@ -32,6 +35,7 @@ document.addEventListener("DOMContentLoaded", function() {
     var opcionTimer = 60;
     var juegoEnProgreso = false; // Flag para indicar si el juego está en curso
     var nombreJugador = "";
+    botonTerminarJuego.disabled = true; // Deshabilitar botón de terminar juego
 
     enter.addEventListener("click", function() {
         finalizarPalabra();
@@ -51,6 +55,14 @@ document.addEventListener("DOMContentLoaded", function() {
             actualizarCasillasSeleccionables();
         }
     });
+
+    botonOrdenarPorFecha.addEventListener("click", function() {
+        cargarResultadosPorFecha();
+    });
+    botonOrdenarPorPuntuacion.addEventListener("click", function() {
+        cargarResultados();
+    });
+
 
     botonAceptarNombre.addEventListener("click", function() {
         nombreJugador = inputNombreJugador.value;
@@ -113,6 +125,7 @@ document.addEventListener("DOMContentLoaded", function() {
         botonIniciarJuego.disabled = true; // Deshabilitar botón de iniciar juego
         juegoEnProgreso = true; // Indicar que el juego está en curso
         reiniciarSeleccion(); // Resetear selección al iniciar el juego
+        botonTerminarJuego.disabled = false; // Habilitar botón de terminar juego
     }
 
     function terminarJuego() {
@@ -123,6 +136,7 @@ document.addEventListener("DOMContentLoaded", function() {
         seleccionTemporizador.disabled = false; // Habilitar selección de tiempo
         botonIniciarJuego.disabled = false; // Habilitar botón de iniciar juego
         reiniciarSeleccion(); // Resetear selección al finalizar el juego
+        botonTerminarJuego.disabled = true; // Deshabilitar botón de terminar juego
     }
 
     function cuentaRegresiva() {
@@ -335,6 +349,8 @@ document.addEventListener("DOMContentLoaded", function() {
         
         // Mostrar solo el top 10
         var topresultados = resultadosGuardados.slice(0, 10);
+
+        textoRanking.textContent = "Ranking - Top 10 Puntuacion";
         
         topresultados.forEach(function(resultado) {
             var li = document.createElement("li");
@@ -342,7 +358,25 @@ document.addEventListener("DOMContentLoaded", function() {
             listaResultadosGuardados.appendChild(li);
         });
     }
-    
+    function cargarResultadosPorFecha() {
+        var resultadosGuardados = JSON.parse(localStorage.getItem("resultadosJuego")) || [];
+        listaResultadosGuardados.innerHTML = "";
+        
+        // Ordenar los resultados por fecha de más reciente a menos reciente
+        resultadosGuardados.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+        
+        // Mostrar solo los 10 mas recientes
+        var topresultados = resultadosGuardados.slice(0, 10);
+        
+        textoRanking.textContent = "Ranking - Mas Recientes";
+        
+        topresultados.forEach(function(resultado) {
+            var li = document.createElement("li");
+            li.textContent = `Nombre: ${resultado.nombre}, Puntuación: ${resultado.puntuacion}, Fecha: ${resultado.fecha}, Tiempo: ${resultado.tiempo}`;
+            listaResultadosGuardados.appendChild(li);
+    });
+}
+
     
 
     // Cargar resultados al inicio
